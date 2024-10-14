@@ -1,0 +1,50 @@
+volumes:
+  puma-sock:
+
+services:
+  nginx:
+    container_name: rails-nginx
+    build: ./nginx/
+    image: rails-nginx
+    ports:
+      - '80:80'
+    volumes:
+      - ~/git/github/menta/dev_rails:/var/www/app:delegated
+      - puma-sock:/var/run/puma
+    tty: true
+    depends_on:
+      - app
+  app:
+    container_name: rails-app
+    build: ./app/
+    image: rails-app
+    volumes:
+      - ~/git/github/menta/dev_rails:/var/www/app:delegated
+      - puma-sock:/var/run/puma
+    tty: true
+    depends_on:
+      - db
+      - redis
+  db:
+    container_name: rails-db
+    build: ./mysql/
+    image: rails-db
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DEBUG: 1
+    volumes:
+      - ./mysql/db_data:/var/lib/mysql
+  redis:
+    build: ./redis/
+    container_name: rails-redis
+    image: rails-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./redis/db_data:/data
